@@ -1,0 +1,11 @@
+{
+  "name": "work",
+  "description": "Skills for planning, handing over and orchestrating agent sessions: grill, handover, orchestrate",
+  "author": {
+    "name": "Hyunhoi Koo"
+  },
+  "repository": "https://github.com/hhoikoo/agent-marketplace",
+  "license": "Apache-2.0",
+  "hooks": "./hooks/claude-hooks.json",
+  "types": "./types/index.d.ts"
+}
