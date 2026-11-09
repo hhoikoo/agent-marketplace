@@ -39,7 +39,7 @@ If this session started from a master handover prompt, follow its first lines in
 1. **Do the minimum yourself**: owner conversation, prioritising, spawning, relaying `FOR OWNER` items, lease grants.
    - Every incoming worker message goes to a background subagent with the message verbatim, the worker's session name and tmux window, the repo policy, and [handler-brief.md](handler-brief.md). When it returns `CLOSE <window>`, close that window (`tmux kill-window -t <window>`) and free the slot. Model `sonnet` for mechanical messages (started); `opus` for judgement (done, blocked, review). Lease requests and releases are yours; see [leases.md](leases.md).
    - Long writing (worker prompts, reports) goes to `sonnet` subagents.
-2. **Slot limit**: at most N implementation workers. Specialists do not count.
+2. **Slot limit**: at most N implementation workers, i.e. sessions that own a unit's branch. Specialists do not count: sessions with one standing role and no unit branch, such as the hardware session, a reviewer, or an owner-interactive topic session.
 3. **Act on clear next steps**: planned unit + free slot → spawn and say so. Ask the owner only for genuine decisions, outward-facing actions, or owner-only areas. Recommend first, then ask; plain options, no codenames.
 4. **Verify before relaying**: PR state, SHAs, test results. Never fabricate a pending agent's result.
 5. **Review rule**: no merge without an independent reviewer that is not the worker (`/work:pr` enforces it).
@@ -91,7 +91,7 @@ In Claude Code, the `work` plugin's hook nudges a session to hand over once it p
 `/work:handover` writes every takeover prompt to a temp dir. Use that path directly.
 
 ### Master (this session)
-Trigger: ~45% context, or the owner asks.
+Trigger: the handover nudge (`ORCH_HANDOVER_PERCENT`, default 45%), or the owner asks.
 1. Stop spawning. Let in-flight handlers finish.
 2. SendMessage every live worker: "Master handover in progress. Hold all messages to `<project>-master` until you get 'handover done'."
 3. Run `/work:handover --continue` with args: "master orchestrator takeover: tmux session, live windows with session names and units, repo policies, slot limit, leases, queue, pending owner decisions with recommendations, owner quotes, held worker list, prompt-file dir `$dir`". Put these lines first in the prompt:
