@@ -2,7 +2,7 @@
 name: orchestrate
 description: Runs this session as the master orchestrator of a multi-session project. Spawns Claude Code worker sessions in tmux windows, enforces a slot limit, leases VMs and hardware, routes each worker message to a handler subagent, and hands sessions over via /work:handover. Use when the user says "orchestrate", "be the master", or "spawn workers", or starts the session from a master handover prompt.
 compatibility: Claude Code with tmux (uses ListAgents and SendMessage)
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh *) Bash(tmux display *) Bash(tmux send-keys *) Bash(tmux kill-window *) Bash(mktemp *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh *) Bash(${CLAUDE_SKILL_DIR}/../spawn/scripts/rename-self.sh *) Bash(tmux display *) Bash(tmux send-keys *) Bash(tmux kill-window *) Bash(mktemp *)
 ---
 
 # Orchestrate
@@ -19,11 +19,7 @@ Files in this skill:
 
 ## Launch
 
-1. Rename yourself `<project>-master` (ask the owner for the project name if unknown), unless `ListAgents` shows you already have that name (a successor master starts with it). Slash commands are not a tool you can call, so type it into your own pane, delayed so it lands when you are idle. Run with Bash `run_in_background: true`:
-   ```bash
-   sleep 8; tmux send-keys -t "$TMUX_PANE" C-u; tmux send-keys -t "$TMUX_PANE" -l '/rename <project>-master'; sleep 1; tmux send-keys -t "$TMUX_PANE" Enter
-   ```
-   End your turn right after so the input lands. When re-invoked, check with `ListAgents` (its first line names this session) before spawning anyone: workers reporting to an unclaimed name lose their messages. Never tell the owner to rename you.
+1. Rename yourself `<project>-master` (ask the owner for the project name if unknown), unless `ListAgents` shows you already have that name (a successor master starts with it). Run `${CLAUDE_SKILL_DIR}/../spawn/scripts/rename-self.sh <project>-master` with Bash `run_in_background: true` and end your turn right after so the input lands (see `/work:spawn`, "Rename this session"). When re-invoked, check with `ListAgents` (its first line names this session) before spawning anyone: workers reporting to an unclaimed name lose their messages. Never tell the owner to rename you.
 2. Make a temp dir for prompt files; nothing goes in the repo: `dir=$(mktemp -d "${TMPDIR:-/tmp}/orchestrate.XXXXXX")`.
 3. Read the launchers file (`${XDG_CONFIG_HOME:-$HOME/.config}/agent-marketplace/spawn/launchers.json`, see [../spawn/launchers.md](../spawn/launchers.md)). Keep its launchers, with their `use_for` and `avoid_for`, as the list you pick from for every spawn. If the file is missing, `claude` is the only launcher.
 4. Ask the owner, in one batch, only what has no default:

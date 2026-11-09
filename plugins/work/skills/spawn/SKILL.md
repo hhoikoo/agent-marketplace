@@ -2,7 +2,8 @@
 name: spawn
 description: Starts a fresh Claude Code session in tmux and hands it a prompt file, either in a new window or replacing this session in place (the new session closes this pane). Handles how a session starts, not what it is told. Use when asked to spawn, start or relaunch a session from a prompt file, or when another skill (handover --continue, orchestrate) needs a session started.
 argument-hint: "[--replace] [options] <prompt-file>"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(tmux display *)
+compatibility: Claude Code with tmux
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(${CLAUDE_SKILL_DIR}/scripts/rename-self.sh *) Bash(tmux display *)
 ---
 
 # Spawn
@@ -36,3 +37,7 @@ The script exports `SPAWN_NAME`, `SPAWN_MODEL` and `SPAWN_LAUNCHER` to the new s
 4. New window: confirm the name with `ListAgents`, then tell the user the target. Replace: end your turn right away with one line saying the successor is taking over; it closes this pane.
 
 Readiness env: `SPAWN_READY_MARKER` (default `❯`), `SPAWN_READY_TRIES` (default 45, 2 s apart).
+
+## Rename this session
+
+Sessions started here are named at launch. To rename the current session (e.g. one the user started), run `${CLAUDE_SKILL_DIR}/scripts/rename-self.sh <name>` with Bash `run_in_background: true`, then end your turn right away: it types `/rename <name>` into this pane after `SPAWN_RENAME_DELAY` seconds (default 8), which only lands while you are idle. When re-invoked, confirm the name with `ListAgents`. Never ask the user to rename you.
