@@ -10,7 +10,7 @@
 #   --launcher <l>      launcher from the launchers file (default: $SPAWN_LAUNCHER, else claude)
 #   --cwd <dir>         start directory (default: the current pane's directory, else $PWD)
 #   --env K=V           extra env for the new session; repeatable; overrides inherited values
-# Inherited by default: ORCH_ROLE and ORCH_HANDOVER_PERCENT when set. The new session gets
+# Inherited by default: ORCH_ROLE and HANDOVER_PERCENT when set. The new session gets
 # SPAWN_NAME, SPAWN_MODEL and SPAWN_LAUNCHER, so its own successor inherits them.
 # Env:
 #   SPAWN_LAUNCHERS_FILE  launchers file (default: ${XDG_CONFIG_HOME:-$HOME/.config}/agent-marketplace/spawn/launchers.json)
@@ -75,7 +75,7 @@ command -v "$exe" >/dev/null || { echo "launcher command not found: $exe" >&2; e
 envs=("SPAWN_LAUNCHER=$launcher")
 [[ -n $name ]] && envs+=("SPAWN_NAME=$name")
 [[ -n $model ]] && envs+=("SPAWN_MODEL=$model")
-for v in ORCH_ROLE ORCH_HANDOVER_PERCENT; do
+for v in ORCH_ROLE HANDOVER_PERCENT; do
   [[ -n ${!v:-} ]] && envs+=("$v=${!v}")
 done
 envs+=(${extra_env[@]+"${extra_env[@]}"})

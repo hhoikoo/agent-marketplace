@@ -1,12 +1,10 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-type World = { role?: string; threshold?: string; percent: number; submitted: string[] }
+type World = { threshold?: string; percent: number; submitted: string[] }
 
 const world = (on: On, w: World) => {
-  on('env.get', ($, e) => ({
-    value: e.name === 'ORCH_ROLE' ? w.role : e.name === 'ORCH_HANDOVER_PERCENT' ? w.threshold : undefined,
-  }))
+  on('env.get', ($, e) => ({ value: e.name === 'HANDOVER_PERCENT' ? w.threshold : undefined }))
   on('session.usage', () => ({
     value: {
       startedAt: 0,
@@ -19,62 +17,56 @@ const world = (on: On, w: World) => {
     return { text: e.text }
   })
   on('turn.complete', ($, e) => ({ text: e.answer }))
-  on('session.start', ($, e) => ({ cwd: e.cwd }))
 }
 
-const START = { cwd: '/tmp', surface: 'terminal', isInteractive: true } as const
 const turn = { answer: 'ok', durationMs: 1, isAborted: false, turnId: 't', reason: 'answer' } as const
 
 describe('handover-nudge', () => {
-  test('worker over threshold is nudged once', async ($, on) => {
-    const w: World = { role: 'worker', percent: 50, submitted: [] }
-    world(on, w)
-    await $.session.start(START)
-    await $.turn.complete(turn)
-    await $.turn.complete(turn)
-    expect(w.submitted.length).toBe(1)
-    expect(w.submitted[0]).toContain('/work:handover')
-  })
-
-  test('worker under threshold is not nudged', async ($, on) => {
-    const w: World = { role: 'worker', percent: 30, submitted: [] }
-    world(on, w)
-    await $.session.start(START)
-    await $.turn.complete(turn)
-    expect(w.submitted.length).toBe(0)
-  })
-
-  test('session without a role is never nudged', async ($, on) => {
-    const w: World = { percent: 90, submitted: [] }
-    world(on, w)
-    await $.session.start(START)
-    await $.turn.complete(turn)
-    expect(w.submitted.length).toBe(0)
-  })
-
-  test('ORCH_HANDOVER_PERCENT overrides the default', async ($, on) => {
-    const w: World = { role: 'worker', threshold: '60', percent: 50, submitted: [] }
-    world(on, w)
-    await $.session.start(START)
-    await $.turn.complete(turn)
-    expect(w.submitted.length).toBe(0)
-  })
-
-  test('running /work:orchestrate makes the session a master', async ($, on) => {
+  test('any session over the threshold is nudged once', async ($, on) => {
     const w: World = { percent: 50, submitted: [] }
     world(on, w)
-    on('skill.prompt', ($, e) => ({ text: e.text }))
-    await $.session.start(START)
-    await $.skill.prompt({ skill: 'work:orchestrate', text: '' })
+    await $.turn.complete(turn)
     await $.turn.complete(turn)
     expect(w.submitted.length).toBe(1)
-    expect(w.submitted[0]).toContain('master handover')
+    expect(w.submitted[0]).toContain('/work:handover --auto')
+  })
+
+  test('under the threshold is not nudged', async ($, on) => {
+    const w: World = { percent: 30, submitted: [] }
+    world(on, w)
+    await $.turn.complete(turn)
+    expect(w.submitted.length).toBe(0)
+  })
+
+  test('HANDOVER_PERCENT overrides the default', async ($, on) => {
+    const w: World = { threshold: '60', percent: 50, submitted: [] }
+    world(on, w)
+    await $.turn.complete(turn)
+    expect(w.submitted.length).toBe(0)
+  })
+
+  test('HANDOVER_PERCENT=off disables the nudge', async ($, on) => {
+    const w: World = { threshold: 'off', percent: 95, submitted: [] }
+    world(on, w)
+    await $.turn.complete(turn)
+    expect(w.submitted.length).toBe(0)
+  })
+
+  test('an ignored nudge repeats after 10 more points', async ($, on) => {
+    const w: World = { percent: 50, submitted: [] }
+    world(on, w)
+    await $.turn.complete(turn)
+    w.percent = 59
+    await $.turn.complete(turn)
+    expect(w.submitted.length).toBe(1)
+    w.percent = 60
+    await $.turn.complete(turn)
+    expect(w.submitted.length).toBe(2)
   })
 
   test('subagent turns are ignored', async ($, on) => {
-    const w: World = { role: 'worker', percent: 90, submitted: [] }
+    const w: World = { percent: 90, submitted: [] }
     world(on, w)
-    await $.session.start(START)
     await $.turn.complete({ ...turn, agentId: 'a1' })
     expect(w.submitted.length).toBe(0)
   })

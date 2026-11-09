@@ -1,7 +1,7 @@
-export type Role = 'master' | 'worker'
+export type NudgeState = { lastNudgePercent: number | null }
 
 declare module 'claude-code' {
   interface PluginState {
-    'work': { role: Role | null; hasNudged: boolean }
+    'work': NudgeState
   }
 }

@@ -22,5 +22,5 @@ npx skills@latest add . --list           # skills discovery as npx skills sees i
 - Skills that call each other use the plugin names (`/work:spawn`) and must keep working with the bare names `npx skills` installs (`/spawn`). Cross-skill files are referenced as siblings: `${CLAUDE_SKILL_DIR}/../<skill>/...`.
 - Plugin descriptions stay generic; don't list skills in them.
 - Codex auto-loads `hooks/hooks.json`, so Claude-only hooks go in `hooks/claude-hooks.json`.
-- The handover nudge (`plugins/work/hooks/register.ts`) depends on `ORCH_ROLE`, `ORCH_HANDOVER_PERCENT`, the skill name `orchestrate` and the heading "Handover → Master (this session)" in orchestrate's SKILL.md. Changing any of them means updating the hook and `plugins/work/tests/nudge.test.ts`.
+- The handover nudge (`plugins/work/hooks/register.ts`) only decides when: past `HANDOVER_PERCENT` it submits "run /work:handover --auto". What to do lives in the skills: handover's **Auto** table routes by role (`ORCH_ROLE`, orchestrate's "Handover → Master (this session)" heading). Renaming that flag, env var or heading means updating the others and `plugins/work/tests/nudge.test.ts`.
 - Test tmux behaviour in a separate server (`tmux -L <name>`), never on the default one.

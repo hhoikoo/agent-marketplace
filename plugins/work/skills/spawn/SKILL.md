@@ -27,7 +27,7 @@ The new session copies this one unless a flag overrides it:
 | model | `$SPAWN_MODEL`; if unset and the launcher is `claude`, pass your own model ID | `--model` |
 | launcher | `$SPAWN_LAUNCHER`, else `claude` | `--launcher`, see [launchers.md](launchers.md) |
 | start dir | this pane's directory | `--cwd` |
-| env | `ORCH_ROLE`, `ORCH_HANDOVER_PERCENT` when set | `--env K=V` (repeatable) |
+| env | `ORCH_ROLE`, `HANDOVER_PERCENT` when set | `--env K=V` (repeatable) |
 
 The script exports `SPAWN_NAME`, `SPAWN_MODEL` and `SPAWN_LAUNCHER` to the new session, so its own successor inherits them. Pass only what the user asked to change.
 

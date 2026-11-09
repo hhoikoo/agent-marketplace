@@ -77,7 +77,7 @@ Pass the model explicitly on every subagent (`model`) and every worker (`--model
    "${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh" --launcher <name> --model sonnet --name <worker-session-name> --env ORCH_ROLE=worker \
      --session <session> --window-name <short-name> --cwd <start-dir> "$dir/<worker-name>.md"
    ```
-   Always pass `--launcher`, `--model`, `--name` and `--env ORCH_ROLE=worker` explicitly; otherwise the worker inherits this session's values. The worker starts as `<launcher command> -n <worker-session-name>`, so it is addressable by that name from the start. `ORCH_HANDOVER_PERCENT` passes through for the handover nudge. The script exits non-zero if the launcher is unknown, the start dir is untrusted, or the session never shows the ready marker; report that to the owner. Flags and env: see `/work:spawn`.
+   Always pass `--launcher`, `--model`, `--name` and `--env ORCH_ROLE=worker` explicitly; otherwise the worker inherits this session's values. The worker starts as `<launcher command> -n <worker-session-name>`, so it is addressable by that name from the start. `HANDOVER_PERCENT` passes through for the handover nudge. The script exits non-zero if the launcher is unknown, the start dir is untrusted, or the session never shows the ready marker; report that to the owner. Flags and env: see `/work:spawn`.
 3. Confirm the name with `ListAgents`.
 
 Manual sends: always `send-keys -l '<text>'`, then `send-keys Enter` as a separate call.
@@ -88,12 +88,12 @@ VMs and hardware are leased by you, never by handlers. Read [leases.md](leases.m
 
 ## Handover
 
-In Claude Code, the `work` plugin's hook nudges a session to hand over once it passes `ORCH_HANDOVER_PERCENT` (default 45) of its context. It reads `ORCH_ROLE` (`master` or `worker`) and treats a session that ran `/work:orchestrate` as a master.
+In Claude Code, the `work` plugin's hook nudges every session to run `/work:handover --auto` once it passes `HANDOVER_PERCENT` (default 45, `off` disables) of its context. That skill routes a master here and a worker (`ORCH_ROLE=worker`) to its worker rules.
 
 `/work:handover` writes every takeover prompt to a temp dir. Use that path directly.
 
 ### Master (this session)
-Trigger: the handover nudge (`ORCH_HANDOVER_PERCENT`, default 45%), or the owner asks.
+Trigger: the handover nudge (`/work:handover --auto`), or the owner asks.
 1. Stop spawning. Let in-flight handlers finish.
 2. SendMessage every live worker: "Master handover in progress. Hold all messages to `<project>-master` until you get 'handover done'."
 3. Run `/work:handover --continue` with args: "master orchestrator takeover: tmux session, live windows with session names and units, repo policies, slot limit, leases, queue, pending owner decisions with recommendations, owner quotes, held worker list, prompt-file dir `$dir`". Put these lines first in the prompt:
