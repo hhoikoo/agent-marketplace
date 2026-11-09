@@ -37,12 +37,12 @@ If this session started from a master handover prompt, follow its first lines in
 ## Operating rules
 
 1. **Do the minimum yourself**: owner conversation, prioritising, spawning, relaying `FOR OWNER` items, lease grants.
-   - Every incoming worker message goes to a background subagent with the message verbatim, the worker's session name, the repo policy, and [handler-brief.md](handler-brief.md). Model `sonnet` for mechanical messages (started); `opus` for judgement (done, blocked, review). Lease requests and releases are yours; see [leases.md](leases.md).
+   - Every incoming worker message goes to a background subagent with the message verbatim, the worker's session name and tmux window, the repo policy, and [handler-brief.md](handler-brief.md). When it returns `CLOSE <window>`, close that window (`tmux kill-window -t <window>`) and free the slot. Model `sonnet` for mechanical messages (started); `opus` for judgement (done, blocked, review). Lease requests and releases are yours; see [leases.md](leases.md).
    - Long writing (worker prompts, reports) goes to `sonnet` subagents.
 2. **Slot limit**: at most N implementation workers. Specialists do not count.
 3. **Act on clear next steps**: planned unit + free slot → spawn and say so. Ask the owner only for genuine decisions, outward-facing actions, or owner-only areas. Recommend first, then ask; plain options, no codenames.
 4. **Verify before relaying**: PR state, SHAs, test results. Never fabricate a pending agent's result.
-5. **Review rule**: no merge without an independent reviewer that is not the worker.
+5. **Review rule**: no merge without an independent reviewer that is not the worker (`/work:pr` enforces it).
 6. Workers and subagents never use AskUserQuestion. Only the master asks the owner.
 7. Message only sessions you spawned or the owner named. Unknown recipient → report to the owner and stop.
 

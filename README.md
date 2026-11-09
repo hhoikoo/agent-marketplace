@@ -4,7 +4,7 @@ Personal plugin marketplace for Claude Code and Codex.
 
 | Plugin | Claude Code | Codex | What it does |
 |---|---|---|---|
-| `work` | yes | skills only | Skills `grill` (interview the user until a plan has no open questions), `handover` (write a takeover prompt for a fresh session; `--continue` also starts that session in place), `spawn` (start a Claude Code session in tmux from a prompt file, in a new window or replacing the current pane) and `orchestrate` (run a master session that drives worker sessions in tmux). In Claude Code it also nudges orchestrated sessions to hand over when their context fills up. |
+| `work` | yes | skills only | Skills `grill` (interview the user until a plan has no open questions), `handover` (write a takeover prompt for a fresh session; `--continue` also starts that session in place), `spawn` (start a Claude Code session in tmux from a prompt file, in a new window or replacing the current pane), `pr` (verify a finished PR, get it an independent review and land it per repo policy) and `orchestrate` (run a master session that drives worker sessions in tmux). In Claude Code it also nudges orchestrated sessions to hand over when their context fills up. |
 | `slash-menu` | yes | no | Replaces the `/` command list with a grouped menu above the prompt, with descriptions beside it. |
 
 ## Install
@@ -17,7 +17,7 @@ claude plugin install work@hhoikoo
 claude plugin install slash-menu@hhoikoo
 ```
 
-Skills run as `/work:grill`, `/work:handover`, `/work:spawn` and `/work:orchestrate`.
+Skills run as `/work:grill`, `/work:handover`, `/work:spawn`, `/work:pr` and `/work:orchestrate`.
 
 Codex:
 
