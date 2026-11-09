@@ -4,7 +4,7 @@ Personal plugin marketplace for Claude Code and Codex.
 
 | Plugin | Claude Code | Codex | What it does |
 |---|---|---|---|
-| `work` | yes | skills only | Skills `grill` (interview the user until a plan has no open questions), `handover` (write a takeover prompt for a fresh session) and `orchestrate` (run a master session that drives worker sessions in tmux). In Claude Code it also nudges orchestrated sessions to hand over when their context fills up. |
+| `work` | yes | skills only | Skills `grill` (interview the user until a plan has no open questions), `handover` (write a takeover prompt for a fresh session; `--continue` also starts that session in place), `spawn` (start a Claude Code session in tmux from a prompt file, in a new window or replacing the current pane) and `orchestrate` (run a master session that drives worker sessions in tmux). In Claude Code it also nudges orchestrated sessions to hand over when their context fills up. |
 | `slash-menu` | yes | no | Replaces the `/` command list with a grouped menu above the prompt, with descriptions beside it. |
 
 ## Install
@@ -17,7 +17,7 @@ claude plugin install work@hhoikoo
 claude plugin install slash-menu@hhoikoo
 ```
 
-Skills run as `/work:grill`, `/work:handover` and `/work:orchestrate`.
+Skills run as `/work:grill`, `/work:handover`, `/work:spawn` and `/work:orchestrate`.
 
 Codex:
 
@@ -39,9 +39,9 @@ plugins/work/
 plugins/slash-menu/                 Claude Code hooks module
 ```
 
-## Orchestrate launchers
+## Spawn launchers
 
-`orchestrate` starts workers with `claude`. Other launchers, such as a wrapper that points Claude Code at another model provider, go in the optional, untracked `~/.config/agent-marketplace/orchestrate/launchers.json`. See `plugins/work/skills/orchestrate/launchers.md`.
+`spawn` (and so `orchestrate` and `handover --continue`) starts sessions with `claude`. Other launchers, such as a wrapper that points Claude Code at another model provider, go in the optional, untracked `~/.config/agent-marketplace/spawn/launchers.json`. See `plugins/work/skills/spawn/launchers.md`.
 
 ## Development
 

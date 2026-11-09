@@ -1,0 +1,38 @@
+---
+name: spawn
+description: Starts a fresh Claude Code session in tmux and hands it a prompt file, either in a new window or replacing this session in place (the new session closes this pane). Handles how a session starts, not what it is told. Use when asked to spawn, start or relaunch a session from a prompt file, or when another skill (handover --continue, orchestrate) needs a session started.
+argument-hint: "[--replace] [options] <prompt-file>"
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(tmux display *)
+---
+
+# Spawn
+
+Start a session with `${CLAUDE_SKILL_DIR}/scripts/spawn.sh` from `$ARGUMENTS`. The prompt file holds what the session should do; this skill only decides how it starts. Requires tmux; launchers other than `claude` also need `jq`.
+
+| mode | flag | what happens |
+|---|---|---|
+| new window | (default) | new window in the current tmux session (`--session`, `--window-name` to change) |
+| replace | `--replace` | splits this pane (`$TMUX_PANE`, or `--pane`); the new session closes this pane first, then reads the prompt file |
+
+## Inheritance
+
+The new session copies this one unless a flag overrides it:
+
+| what | default | override |
+|---|---|---|
+| name (`-n`) | `$SPAWN_NAME`; pass `--name` from `ListAgents` (its first line names this session) when this session has a name | `--name` |
+| model | `$SPAWN_MODEL`; if unset and the launcher is `claude`, pass your own model ID | `--model` |
+| launcher | `$SPAWN_LAUNCHER`, else `claude` | `--launcher`, see [launchers.md](launchers.md) |
+| start dir | this pane's directory | `--cwd` |
+| env | `ORCH_ROLE`, `ORCH_HANDOVER_PERCENT` when set | `--env K=V` (repeatable) |
+
+The script exports `SPAWN_NAME`, `SPAWN_MODEL` and `SPAWN_LAUNCHER` to the new session, so its own successor inherits them. Pass only what the user asked to change.
+
+## Steps
+
+1. Work out the flags (above). Check the prompt file exists and is self-contained: the new session starts cold.
+2. Run the script. It waits until the session is ready, then types the kickoff line. It prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`.
+3. On a non-zero exit (unknown launcher, untrusted start dir, session never ready), report the message and stop. Never answer a folder-trust prompt for the user.
+4. New window: confirm the name with `ListAgents`, then tell the user the target. Replace: end your turn right away with one line saying the successor is taking over; it closes this pane.
+
+Readiness env: `SPAWN_READY_MARKER` (default `❯`), `SPAWN_READY_TRIES` (default 45, 2 s apart).
