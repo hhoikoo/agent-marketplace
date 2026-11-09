@@ -1,0 +1,17 @@
+{
+  "name": "hhoikoo",
+  "description": "Agent plugins by hhoikoo",
+  "owner": { "name": "Hyunhoi Koo", "url": "https://github.com/hhoikoo" },
+  "plugins": [
+    {
+      "name": "work",
+      "source": "./plugins/work",
+      "description": "Skills for planning, handing over and orchestrating agent sessions: grill, handover, orchestrate"
+    },
+    {
+      "name": "slash-menu",
+      "source": "./plugins/slash-menu",
+      "description": "Replaces the / command list with a grouped menu above the prompt, with descriptions beside it"
+    }
+  ]
+}
