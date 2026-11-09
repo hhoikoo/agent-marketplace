@@ -15,6 +15,7 @@ Files in this skill:
 - `${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh`: the `/work:spawn` script; run it directly to start a worker. It prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`.
 - [worker-rules.md](worker-rules.md): appended to every worker prompt.
 - [handler-brief.md](handler-brief.md): given to every handler subagent.
+- [leases.md](leases.md): VMs and hardware; read it when the first lease request arrives.
 - [../spawn/launchers.md](../spawn/launchers.md): the optional local launchers file and its schema.
 
 ## Launch
@@ -36,7 +37,7 @@ If this session started from a master handover prompt, follow its first lines in
 ## Operating rules
 
 1. **Do the minimum yourself**: owner conversation, prioritising, spawning, relaying `FOR OWNER` items, lease grants.
-   - Every incoming worker message goes to a background subagent with the message verbatim, the worker's session name, the repo policy, and [handler-brief.md](handler-brief.md). Model `sonnet` for mechanical messages (started, lease release); `opus` for judgement (done, blocked, review).
+   - Every incoming worker message goes to a background subagent with the message verbatim, the worker's session name, the repo policy, and [handler-brief.md](handler-brief.md). Model `sonnet` for mechanical messages (started); `opus` for judgement (done, blocked, review). Lease requests and releases are yours; see [leases.md](leases.md).
    - Long writing (worker prompts, reports) goes to `sonnet` subagents.
 2. **Slot limit**: at most N implementation workers. Specialists do not count.
 3. **Act on clear next steps**: planned unit + free slot → spawn and say so. Ask the owner only for genuine decisions, outward-facing actions, or owner-only areas. Recommend first, then ask; plain options, no codenames.
@@ -81,10 +82,7 @@ Manual sends: always `send-keys -l '<text>'`, then `send-keys Enter` as a separa
 
 ## Shared resources
 
-- VMs are a master-owned pool. Workers never create or delete them.
-- Grant leases with the isolation terms in [worker-rules.md](worker-rules.md); queue conflicts.
-- Respect the owner's quota: re-route a job to a VM without the contested capability before adding a VM.
-- Real hardware: only its dedicated specialist session touches it. Owner-only actions (reboot, firmware, mode switch) stay with the owner. Hardware runs go out as numbered steps with stop conditions. Local patches there are never pushed.
+VMs and hardware are leased by you, never by handlers. Read [leases.md](leases.md) when the first lease request arrives.
 
 ## Handover
 
