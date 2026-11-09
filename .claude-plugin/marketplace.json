@@ -6,7 +6,7 @@
     {
       "name": "work",
       "source": "./plugins/work",
-      "description": "Skills for planning, handing over and orchestrating agent sessions: grill, handover, orchestrate"
+      "description": "Skills for day-to-day programming work with agent sessions"
     },
     {
       "name": "slash-menu",
