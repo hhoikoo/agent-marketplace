@@ -8,6 +8,8 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(${CLAUDE_SKILL_
 
 # Spawn
 
+`${CLAUDE_SKILL_DIR}` below is this skill's directory; if it appears unexpanded (e.g. in Codex), use the directory containing this file.
+
 Start a session with `${CLAUDE_SKILL_DIR}/scripts/spawn.sh` from `$ARGUMENTS`. The prompt file holds what the session should do; this skill only decides how it starts. Requires tmux; launchers other than `claude` also need `jq`.
 
 | mode | flag | what happens |
