@@ -17,6 +17,6 @@ Write a takeover prompt for a fresh Claude session that has no access to this co
    - `## Pointers`: exact file paths, branch, commit SHAs, PR numbers, ticket IDs, design docs, sources.
    - `## Verification`: what was tested and how, what was not tested, and the commands to re-check.
 3. Without `--continue`: print the path. Suggest `claude "$(cat <path>)"` or pasting the file into a new session.
-4. With `--continue`: run `/work:spawn --replace <path>` so a fresh session takes over in this pane and closes this one. Do not write pane-killing steps into the prompt; spawn adds them.
+4. With `--continue`: run `/work:spawn --replace <path>` (`/spawn` when installed with `npx skills`) so a fresh session takes over in this pane and closes this one. Do not write pane-killing steps into the prompt; spawn adds them.
 
 The reader starts cold, so name things exactly ("`src/auth.ts`", "PR #412"), never "the file we edited". Get SHAs and branch state from git rather than memory. Keep it terse: facts and next steps, not a session narrative.

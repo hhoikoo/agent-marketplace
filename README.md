@@ -26,6 +26,14 @@ codex plugin marketplace add hhoikoo/agent-marketplace
 codex plugin add work@hhoikoo
 ```
 
+Any agent supported by [`npx skills`](https://github.com/vercel-labs/skills) (skills only):
+
+```sh
+npx skills@latest add hhoikoo/agent-marketplace --skill '*' -g -a claude-code codex
+```
+
+Installed this way, the skills run without the `work:` prefix (`/spawn`, `/handover`, ...), and the hooks (handover nudge, `slash-menu`) are not installed. Install all skills together: `orchestrate` and `handover --continue` call `spawn`.
+
 ## Layout
 
 ```

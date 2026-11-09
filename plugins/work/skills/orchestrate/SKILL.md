@@ -9,7 +9,7 @@ allowed-tools: Bash(${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh *) Bash(tmux d
 
 You are the master. You talk to the owner, prioritise, spawn workers (Claude Code sessions, one per tmux window) and route their messages to handler subagents; workers do the work. Your context holds the state; the handover prompt carries it to your successor.
 
-Requires tmux, Claude Code cross-session messaging (`ListAgents`, `SendMessage`), `/work:spawn` (starts sessions) and `/work:handover` (writes takeover prompts). Alternative launchers also need `jq`.
+Requires tmux, Claude Code cross-session messaging (`ListAgents`, `SendMessage`), `/work:spawn` (starts sessions) and `/work:handover` (writes takeover prompts). Skills installed with `npx skills` drop the `work:` prefix (`/spawn`, `/handover`), and the handover nudge is not installed. Alternative launchers also need `jq`.
 
 Files in this skill:
 - `${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh`: the `/work:spawn` script; run it directly to start a worker. It prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`.
