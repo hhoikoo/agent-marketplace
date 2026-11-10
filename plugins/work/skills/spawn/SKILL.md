@@ -3,7 +3,7 @@ name: spawn
 description: Starts a fresh Claude Code session in tmux and hands it a prompt file, either in a new window or replacing this session in place (the new session closes this pane). Handles how a session starts, not what it is told. Use when asked to spawn, start or relaunch a session from a prompt file, or when another skill (handover --continue, orchestrate) needs a session started.
 argument-hint: "[--replace] [options] <prompt-file>"
 compatibility: Claude Code with tmux
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(${CLAUDE_SKILL_DIR}/scripts/rename-self.sh *) Bash(tmux display *)
+allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/spawn.sh *) Bash(${CLAUDE_SKILL_DIR}/scripts/rename-self.sh *) Bash(tmux display *) Bash(tmux capture-pane *)
 ---
 
 # Spawn
@@ -34,11 +34,11 @@ The script exports `SPAWN_NAME`, `SPAWN_MODEL` and `SPAWN_LAUNCHER` to the new s
 ## Steps
 
 1. Work out the flags (above). Check the prompt file exists and is self-contained: the new session starts cold.
-2. Run the script. It waits until the session is ready, then types the kickoff line. It prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`.
-3. On a non-zero exit (unknown launcher, untrusted start dir, session never ready), report the message and stop. Never answer a folder-trust prompt for the user.
-4. New window: confirm the name with `ListAgents`, then tell the user the target. Replace: end your turn right away with one line saying the successor is taking over; it closes this pane.
+2. Run the script. It passes the kickoff line ("Read <prompt-file> and follow it exactly.") as the launcher's positional prompt, so the session starts with it already submitted and nothing is typed into the pane. It then watches the pane for a few seconds for an early exit or the folder-trust dialog, and prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`.
+3. On a non-zero exit (unknown launcher, untrusted start dir, session exited at launch), report the message and stop. Never answer a folder-trust prompt for the user.
+4. New window: confirm with `ListAgents` that the name is listed (a session held by a dialog never registers; if it is missing, look at the pane with `tmux capture-pane -p -t <pane>`), then tell the user the target. Replace: end your turn right away with one line saying the successor is taking over; it closes this pane.
 
-Readiness env: `SPAWN_READY_MARKER` (default `❯`), `SPAWN_READY_TRIES` (default 45, 2 s apart).
+Start-up check env: `SPAWN_SETTLE`, seconds to watch the pane (default 6).
 
 ## Rename this session
 

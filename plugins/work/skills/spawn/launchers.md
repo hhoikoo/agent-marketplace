@@ -25,7 +25,7 @@ The file is optional and stays on the user's machine. Read it with `cat` when yo
 | field | meaning |
 |---|---|
 | `name` | what you pass to `spawn.sh --launcher`; `claude` is reserved for plain `claude` |
-| `command` | executable on `PATH`, or an absolute path, that takes the same arguments as `claude` (`-n`, `--model`) |
+| `command` | executable on `PATH`, or an absolute path, that takes the same arguments as `claude` (`-n`, `--model`, and the kickoff as a positional prompt after `--`) |
 | `description` | which model or provider it runs, including how `--model` values map |
 | `use_for` | the work that may run under it |
 | `avoid_for` | the work that must never run under it |

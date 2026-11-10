@@ -14,8 +14,7 @@
 # SPAWN_NAME, SPAWN_MODEL and SPAWN_LAUNCHER, so its own successor inherits them.
 # Env:
 #   SPAWN_LAUNCHERS_FILE  launchers file (default: ${XDG_CONFIG_HOME:-$HOME/.config}/agent-marketplace/spawn/launchers.json)
-#   SPAWN_READY_MARKER    text that shows the session's input prompt is up (default: ❯)
-#   SPAWN_READY_TRIES     readiness checks, 2 s apart (default: 45, i.e. 90 s)
+#   SPAWN_SETTLE          seconds to watch for an early exit or the folder-trust dialog (default: 6)
 # Prints: target=<tmux target> pane=<pane id> session=<name> launcher=<name>
 set -euo pipefail
 
@@ -86,6 +85,14 @@ cmd+=" $(printf %q "$exe")"
 [[ -n $name ]] && cmd+=" -n $(printf %q "$name")"
 [[ -n $model ]] && cmd+=" --model $(printf %q "$model")"
 
+kickoff="Read $prompt_file and follow it exactly."
+if [[ $replace -eq 1 ]]; then
+  kickoff="You replace the session in tmux pane $pane. First close it: tmux kill-pane -t $pane. Then read $prompt_file and follow it exactly."
+fi
+# The kickoff is the launcher's positional prompt: the session starts with it already
+# submitted, so nothing is typed into the pane and there is no readiness race.
+cmd+=" -- $(printf %q "$kickoff")"
+
 # The launcher is the pane's command, so no interactive shell prompt can eat keystrokes.
 if [[ $replace -eq 1 ]]; then
   new_pane=$(tmux split-window -d -t "$pane" -c "$cwd" -P -F '#{pane_id}' "$cmd")
@@ -98,40 +105,16 @@ else
   read -r target new_pane < <(tmux new-window -d -t "$tsess:" -n "$wname" -c "$cwd" -P -F '#{session_name}:#{window_index} #{pane_id}' "$cmd")
 fi
 
-# The folder-trust dialog also shows the marker; never answer it from here.
-marker=${SPAWN_READY_MARKER:-❯}
-tries=${SPAWN_READY_TRIES:-45}
-ready=0
-for _ in $(seq 1 "$tries"); do
-  screen=$(tmux capture-pane -p -t "$new_pane" 2>/dev/null) || { echo "$target: pane exited before ready" >&2; exit 1; }
+# Fail fast on the two start-up stops that ListAgents cannot show: a launcher that exits at
+# once (bad arguments), and the folder-trust dialog, which holds the session before it
+# registers. Nothing is typed into the pane; never answer the dialog from here.
+for _ in $(seq 1 "${SPAWN_SETTLE:-6}"); do
+  sleep 1
+  screen=$(tmux capture-pane -p -t "$new_pane" 2>/dev/null) || { echo "$target: session exited right after launch" >&2; exit 1; }
   if grep -qF 'trust this folder' <<<"$screen"; then
-    echo "$target: '$cwd' is not a trusted folder; start in a trusted dir or have the user accept it" >&2
+    echo "$target: '$cwd' is not a trusted folder; start in a trusted dir or have the user accept it in $target" >&2
     exit 1
   fi
-  if grep -qF -- "$marker" <<<"$screen"; then ready=1; break; fi
-  sleep 2
 done
-if [[ $ready -ne 1 ]]; then
-  echo "$target: ready marker '$marker' not seen; inspect with: tmux capture-pane -p -t $new_pane" >&2
-  exit 1
-fi
-
-kickoff="Read $prompt_file and follow it exactly."
-if [[ $replace -eq 1 ]]; then
-  kickoff="You replace the session in tmux pane $pane. First close it: tmux kill-pane -t $pane. Then read $prompt_file and follow it exactly."
-fi
-tmux send-keys -t "$new_pane" C-u
-tmux send-keys -t "$new_pane" -l "$kickoff"
-# A long line can still be settling as a paste when Enter arrives, which leaves it unsent.
-# Press Enter until the input box (between the last two rules) no longer holds the prompt path.
-input_box() { tmux capture-pane -p -J -t "$new_pane" | awk '/^─/ { n++; buf[n] = ""; next } { buf[n] = buf[n] $0 } END { print buf[n - 1] }'; }
-sent=0
-for _ in 1 2 3 4 5; do
-  sleep 1
-  tmux send-keys -t "$new_pane" Enter
-  sleep 1
-  if ! input_box | tr -d ' ' | grep -qF -- "$(basename "$prompt_file")"; then sent=1; break; fi
-done
-[[ $sent -eq 1 ]] || { echo "$target: kickoff line typed but not submitted; inspect with: tmux capture-pane -p -t $new_pane" >&2; exit 1; }
 
 echo "target=$target pane=$new_pane session=${name:-} launcher=$launcher"

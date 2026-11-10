@@ -77,7 +77,7 @@ Pass the model explicitly on every subagent (`model`) and every worker (`--model
    "${CLAUDE_SKILL_DIR}/../spawn/scripts/spawn.sh" --launcher <name> --model sonnet --name <worker-session-name> --env ORCH_ROLE=worker \
      --session <session> --window-name <short-name> --cwd <start-dir> "$dir/<worker-name>.md"
    ```
-   Always pass `--launcher`, `--model`, `--name` and `--env ORCH_ROLE=worker` explicitly; otherwise the worker inherits this session's values. The worker starts as `<launcher command> -n <worker-session-name>`, so it is addressable by that name from the start. `HANDOVER_PERCENT` passes through for the handover nudge. The script exits non-zero if the launcher is unknown, the start dir is untrusted, or the session never shows the ready marker; report that to the owner. Flags and env: see `/work:spawn`.
+   Always pass `--launcher`, `--model`, `--name` and `--env ORCH_ROLE=worker` explicitly; otherwise the worker inherits this session's values. The worker starts as `<launcher command> -n <worker-session-name>`, so it is addressable by that name from the start. `HANDOVER_PERCENT` passes through for the handover nudge. The script exits non-zero if the launcher is unknown, the start dir is untrusted, or the session exits at launch; report that to the owner. Flags and env: see `/work:spawn`.
 3. Confirm the name with `ListAgents`.
 
 Manual sends: always `send-keys -l '<text>'`, then `send-keys Enter` as a separate call.
