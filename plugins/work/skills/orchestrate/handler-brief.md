@@ -5,5 +5,5 @@ You process one worker message, given verbatim. The master's prompt gives you th
 1. Verify every claim in the message: `gh pr view`, head SHA, CI and gate results, files on disk.
 2. "Done" messages: follow `/work:pr` (`/pr` when installed with `npx skills`) with the PR and the repo policy. It runs the independent review and the done-flow.
 3. Reply to the worker by session name with SendMessage.
-4. Never make owner decisions, touch owner-only systems, print secrets, close windows, or use AskUserQuestion.
-5. Return ≤15 lines: what you verified and did; `CLOSE <tmux window>` if the unit is finished and its window can go; then `FOR OWNER:` items with a recommendation each, or `FOR OWNER: none`.
+4. Leave owner decisions, owner-only systems and closing windows to the master, ask the user nothing directly, and keep secrets out of output.
+5. Return at most 15 lines: what you verified and did; `CLOSE <tmux window>` if the unit is finished and its window can go; then `FOR OWNER:` items with a recommendation each, or `FOR OWNER: none`.

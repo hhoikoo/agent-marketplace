@@ -1,54 +1,52 @@
 ---
 name: grill
-description: Interview the user about the current plan, idea, or document until every open unknown is resolved. Spawns fresh-eyed discovery subagents each round to surface new questions, then batches them to the user via AskUserQuestion. Use when the user wants their plan stress-tested, ambiguities flushed out, or says "grill me" / "grill this".
+description: Interviews the user about the current plan, idea or document until every open question has an answer. Each round, fresh subagents look for questions nobody has asked yet, and the user gets them in batches with a recommendation on each. Use when the user wants a plan stress-tested, ambiguities found, or says "grill me" or "grill this".
 ---
 
 # Grill
 
-Interrogate the subject in context — a plan, a design, a document, a half-formed idea — until shared understanding: every open decision is either answered by the user, answered by research, or explicitly deferred. A question that research can answer is explored, not asked. Main-session only: `AskUserQuestion` does not exist inside subagents or Workflows.
+Question the subject in context (a plan, a design, a document, a half-formed idea) until you and the user share one understanding. Every open decision ends up answered by the user, answered by research, or deferred on purpose. Research answers what research can, so ask the user only about judgment calls. Run the interview in the main session, because subagents and workflows cannot reach the user.
 
 ## Args
 
 One of:
-- nothing: grill the plan/ideas already in the current context window.
-- `<path>`: a file or directory to grill (a spec, README, proposal, design doc, codebase area). Read it first; resolutions may be applied back to it (see Record).
-- free text: a topic or plan stated inline; treat it as the subject.
+- nothing: grill the plan or ideas already in the conversation.
+- `<path>`: a file or directory to grill (a spec, README, proposal, design doc, area of the codebase). Read it first. Step 4 says when to write answers back into it.
+- free text: a topic or plan stated inline. Treat it as the subject.
 
 ## Workflow
 
-Maintain a **Q&A ledger** across the whole session: every question asked so far with its answer (or "deferred"/"open"). This ledger is the convergence mechanism — it is fed verbatim to every discovery agent so rounds don't rediscover settled ground.
+Keep a list of every question asked so far with its answer, or "deferred" or "open". Give the whole list to every discovery subagent, so each round builds on settled ground instead of rediscovering it.
 
 Each round:
 
-1. **Discover.** Spawn 1–2 subagents (`general-purpose`; run them in parallel in one message when using two) to find open unknowns with fresh eyes. Each prompt must contain:
-   - the subject (the plan text, file contents, or a faithful summary of the in-context discussion — subagents cannot see this conversation);
-   - the full Q&A ledger, with the instruction: *these are settled — do not re-raise them or minor variants of them; find what they missed*;
-   - the ask: return a list of `{ question, why it matters, recommended answer + reasoning, real alternatives }`, probing for: unstated goals, hidden assumptions, rejected-but-unmentioned alternatives, "what breaks this", scope boundaries, edge cases, success criteria, and contradictions with what's already decided.
-   - When using two agents, give them different lenses (e.g. one adversarial "what breaks this / what's missing", one clarifying "what's ambiguous / underspecified") so they don't duplicate each other.
-2. **Triage.** For each candidate question: answerable by reading files, searching the web, or checking facts yourself → resolve it that way and record it in the ledger as research-answered; genuine judgment call → queue it for the user. Drop duplicates and near-duplicates of ledger entries. Order the queue so upstream decisions come before the questions they gate.
-3. **Interview** via `AskUserQuestion`, batched up to 4 questions per call, in dependency order. Each question: header is the decision at stake; first option is the recommended answer with its description stating why it is recommended; remaining options are the real alternatives. No open-ended "what do you think" — every question ships a recommendation. Free text stays available to the user automatically.
-4. **Record.** Append each answer to the Q&A ledger. If the subject is a file the user owns and the answers change it, apply the resolutions in place (cite the user's answer as the source); otherwise keep the ledger in the reply as a running `Decisions` list.
-5. **Loop.** Answers may unlock downstream questions — go back to step 1 with the updated ledger.
+1. **Discover.** Start one or two `general-purpose` subagents to find open questions with fresh eyes, in parallel in one message when using two. Subagents cannot see this conversation, so each prompt holds:
+   - the subject: the plan text, the file contents, or a faithful summary of the discussion;
+   - the full list of questions and answers, marked as settled, with the instruction to find what it missed and leave those and their variants alone;
+   - the request: return a list of `{ question, why it matters, recommended answer with reasoning, real alternatives }`, looking for unstated goals, hidden assumptions, alternatives rejected without comment, what breaks the plan, scope boundaries, edge cases, success criteria, and contradictions with earlier decisions.
+   - With two subagents, give each a different lens, for example one adversarial ("what breaks this, what is missing") and one clarifying ("what is ambiguous or underspecified"), so their findings differ.
+2. **Triage.** Resolve a question yourself when files, the web or a quick check can answer it, and record it as answered by research. Queue the genuine judgment calls for the user. Drop duplicates of earlier questions. Put upstream decisions first, ahead of the questions they gate.
+3. **Interview.** Ask the queued questions in batches of up to four, in dependency order, using whatever way of asking the user your environment offers. Write each question so the user can answer it without having read anything else: say what is being decided and why it matters, then give your recommendation first with the reason, then the real alternatives. Every question carries a recommendation, and the user can always answer in their own words.
+4. **Record.** Add each answer to the list. When the subject is a file the user owns and the answers change it, update the file and cite the user's answer as the source. Otherwise keep a running list of decisions in your reply.
+5. **Loop.** Answers can open new questions, so start the next round with the updated list.
 
-## Convergence
+## Finishing
 
-- Done: a discovery round (with the full ledger fed in) produces no new non-duplicate questions and nothing is deferred. Emit the shared-understanding block.
-- Cap: after 5 rounds with questions still open → `AskUserQuestion` whether to continue.
-- User says stop at any point → emit the block with open items marked.
+- Done: a discovery round that received the full list finds no new questions and nothing is deferred. Write the summary below.
+- After 5 rounds with questions still open, ask the user whether to continue.
+- When the user says stop, write the summary with the open items marked.
 
-## Output
+## Summary
 
-Shared-understanding block:
-- decisions: `question → answer → rationale`, one per line, in the order resolved.
-- research-answered items (one line each, with what settled them).
-- open/deferred items.
-- files modified, if any.
+- Decisions, one per line, in the order resolved: question, answer, reason.
+- Items answered by research, one line each, with what settled them.
+- Open or deferred items.
+- Files changed, if any.
 
-## Rules
+## Boundaries
 
-- Never run this skill's interview inside a Workflow or subagent; `AskUserQuestion` is main-session only. Subagents are for discovery only.
-- Explore before asking: a question the repo, the web, or the subject itself can answer is a wasted user turn.
-- Always feed the complete Q&A ledger to every discovery agent — this is what makes rounds converge instead of oscillate.
-- Read-only outside the subject: don't modify files other than the subject the user pointed at.
+- Subagents only discover. The interview happens in the main session.
+- Explore before asking: a question that the repo, the web or the subject answers costs the user a turn for nothing.
+- Change only the subject the user pointed at.
 
 $ARGUMENTS

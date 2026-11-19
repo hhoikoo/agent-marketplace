@@ -7,7 +7,7 @@ allowed-tools: Bash(printenv ORCH_ROLE) Bash(mktemp *) Bash(git status *) Bash(g
 
 Write a takeover prompt for a fresh Claude session that has no access to this conversation. Scope: $ARGUMENTS, minus a leading `--continue` or `--auto` (if empty, the current conversation's work). With `--auto`, start at **Auto** below.
 
-1. Create the file. `mktemp -t name.md` mangles the extension and `-t` without a template fails on Linux, so use a directory with an explicit template:
+1. Create the file. Use a directory with an explicit template, because `mktemp -t name.md` mangles the extension and `-t` without a template fails on Linux:
    `out="$(mktemp -d "${TMPDIR:-/tmp}/handover.XXXXXX")/handover.md"`
 2. Write the prompt to `$out` with these sections:
    - `## Context`: the user's goal and why, not just the technical task; how they want to work (preferences, constraints, instructions they gave).
@@ -17,9 +17,9 @@ Write a takeover prompt for a fresh Claude session that has no access to this co
    - `## Pointers`: exact file paths, branch, commit SHAs, PR numbers, ticket IDs, design docs, sources.
    - `## Verification`: what was tested and how, what was not tested, and the commands to re-check.
 3. Without `--continue`: print the path. Suggest `claude "$(cat <path>)"` or pasting the file into a new session.
-4. With `--continue`: run `/work:spawn --replace <path>` (`/spawn` when installed with `npx skills`) so a fresh session takes over in this pane and closes this one. Do not write pane-killing steps into the prompt; spawn adds them.
+4. With `--continue`: run `/work:spawn --replace <path>` (`/spawn` when installed with `npx skills`) so a fresh session takes over in this pane and closes this one. Leave pane-closing steps out of the prompt, because spawn adds them.
 
-The reader starts cold, so name things exactly ("`src/auth.ts`", "PR #412"), never "the file we edited". Get SHAs and branch state from git rather than memory. Keep it terse: facts and next steps, not a session narrative.
+The reader starts cold, so name things exactly ("`src/auth.ts`", "PR #412") instead of "the file we edited". Get SHAs and branch state from git rather than memory. Keep it short: facts and next steps, with no session narrative.
 
 ## Auto
 
@@ -28,6 +28,6 @@ The reader starts cold, so name things exactly ("`src/auth.ts`", "PR #412"), nev
 | role | action |
 |---|---|
 | orchestrate master (you ran `/work:orchestrate`, or `ORCH_ROLE=master`) | follow `/work:orchestrate`'s "Handover → Master (this session)" steps instead of this skill |
-| orchestrate worker (`ORCH_ROLE=worker`) | write the prompt (steps 1–2, including your worker rules), then SendMessage its path to your master; do not start a successor |
+| orchestrate worker (`ORCH_ROLE=worker`) | write the prompt (steps 1 and 2, including your worker rules), then SendMessage its path to your master; leave the successor to the master |
 | any other session inside tmux (`$TMUX_PANE` set) | as `--continue` |
 | any other session | as without flags, and tell the user context is at the threshold |

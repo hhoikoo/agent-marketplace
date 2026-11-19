@@ -4,7 +4,7 @@ Sessions start with `claude` unless the user registers alternative launchers in 
 
 `${XDG_CONFIG_HOME:-$HOME/.config}/agent-marketplace/spawn/launchers.json`
 
-The file is optional and stays on the user's machine. Read it with `cat` when you need to pick a launcher; if it is absent, use only `claude`. `SPAWN_LAUNCHERS_FILE` overrides the path.
+The file is optional and stays on the user's machine. Read it with `cat` when you need to pick a launcher. Without it, use only `claude`. `SPAWN_LAUNCHERS_FILE` overrides the path.
 
 ## Schema
 
@@ -28,6 +28,6 @@ The file is optional and stays on the user's machine. Read it with `cat` when yo
 | `command` | executable on `PATH`, or an absolute path, that takes the same arguments as `claude` (`-n`, `--model`, and the kickoff as a positional prompt after `--`) |
 | `description` | which model or provider it runs, including how `--model` values map |
 | `use_for` | the work that may run under it |
-| `avoid_for` | the work that must never run under it |
+| `avoid_for` | the work that stays off it |
 
-Follow `use_for` and `avoid_for` strictly. Never print or read the launcher's own script; it may hold credentials.
+Follow `use_for` and `avoid_for` strictly. Leave the launcher's own script unread and unprinted, because it may hold credentials.
