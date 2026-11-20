@@ -99,8 +99,7 @@ Trigger: the handover nudge (`/work:handover --auto`), or the owner asks.
 3. Run `/work:handover --continue` with args: "master orchestrator takeover: tmux session, live windows with session names and units, repo policies, slot limit, leases, queue, pending owner decisions with recommendations, owner quotes, held worker list, prompt-file dir `$dir`". Put these lines first in the prompt:
    - "Run `/work:orchestrate`. You are the successor master, already named `<project>-master`."
    - "Send every live worker: 'handover done; resend anything you held'."
-4. `--continue` hands the prompt to `/work:spawn --replace`: the successor starts in this window with this session's name, model and launcher, then closes this pane. Pass `--name <project>-master --model opus` when spawn cannot infer them. Both sessions briefly share the name; workers are holding, so nothing is misrouted.
-5. Stop.
+4. `--continue` hands the prompt to `/work:spawn --replace`: the successor starts in this window with this session's name, model and launcher; this session then closes its own pane with the command spawn prints. Pass `--name <project>-master --model opus` when spawn cannot infer them. Both sessions briefly share the name; workers are holding, so nothing is misrouted.
 
 ### Worker or specialist
 Trigger: the worker reports it needs a handover, or the master decides.
