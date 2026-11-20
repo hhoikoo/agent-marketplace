@@ -34,13 +34,13 @@ The script exports `SPAWN_NAME`, `SPAWN_MODEL` and `SPAWN_LAUNCHER` to the new s
 ## Steps
 
 1. Work out the flags (above). Check that the prompt file exists and is self-contained, because the new session starts cold. In replace mode, first finish everything else this session still has to do: notes, messages, and background tasks (Bash `run_in_background`; wait for them or stop them).
-2. Run the script. It passes the kickoff line ("Read <prompt-file> and follow it exactly.") as the launcher's positional prompt, so the session starts with it already submitted and nothing is typed into the pane. It then watches the pane for a few seconds for an early exit or the folder-trust dialog, and prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`, and in replace mode a second line `close: tmux kill-pane -t <pane>`.
-3. On a non-zero exit (unknown launcher, untrusted start dir, session exited at launch), report the message and stop. The user answers any folder-trust prompt. In replace mode, the trust stop also starts a background watcher that closes the replaced pane once the user accepts the dialog (it gives up after `SPAWN_TRUST_WAIT` seconds, default 30 minutes), so end your turn without running the close command.
+2. Run the script. It passes the kickoff line ("Read <prompt-file> and follow it exactly.") as the launcher's positional prompt, so the session starts with it already submitted. It watches the pane until the session shows that prompt (up to `SPAWN_SETTLE` seconds), accepts the folder-trust dialog if one appears, and prints `target=<tmux target> pane=<pane id> session=<name> launcher=<name>`, and in replace mode a second line `close: tmux kill-pane -t <pane>`.
+3. On a non-zero exit (unknown launcher, session exited at launch or never showed its prompt, trust dialog not accepted), report the message and stop. In replace mode, leave the replaced pane open and do not run a close command.
 4. New window: confirm with `ListAgents` that the name is listed (a session held by a dialog never registers; if it is missing, look at the pane with `tmux capture-pane -p -t <pane>`), then tell the user the target. Replace: write one line saying the successor is taking over, then run the `close:` command as your final tool call, with nothing after it.
 
 Closing the pane ends this session in the middle of its turn: anything still running is killed and this turn's Stop hooks do not run, while SessionEnd hooks still run to completion. With `--pane` naming another pane, the `close:` command closes that other pane: the caller runs it, and the session in that pane is cut off mid-turn.
 
-Start-up check env: `SPAWN_SETTLE`, seconds to watch the pane (default 6); `SPAWN_TRUST_WAIT`, seconds the trust-dialog watcher waits in replace mode (default 1800).
+Start-up check env: `SPAWN_SETTLE`, seconds to wait for the session to show its prompt (default 60); `SPAWN_TRUST_ACCEPT=0`, stop at the folder-trust dialog for the user to answer instead of accepting it.
 
 ## Rename this session
 

@@ -14,8 +14,8 @@
 # SPAWN_NAME, SPAWN_MODEL and SPAWN_LAUNCHER, so its own successor inherits them.
 # Env:
 #   SPAWN_LAUNCHERS_FILE  launchers file (default: ${XDG_CONFIG_HOME:-$HOME/.config}/agent-marketplace/spawn/launchers.json)
-#   SPAWN_SETTLE          seconds to watch for an early exit or the folder-trust dialog (default: 6)
-#   SPAWN_TRUST_WAIT      replace mode: seconds the trust-dialog watcher waits before giving up (default: 1800)
+#   SPAWN_SETTLE          seconds to wait for the session to show its prompt (default: 60)
+#   SPAWN_TRUST_ACCEPT    0 stops at the folder-trust dialog instead of accepting it (default: 1)
 # Prints: target=<tmux target> pane=<pane id> session=<name> launcher=<name>
 #   and with --replace a second line, close: tmux kill-pane -t <replaced pane>, for the caller to run
 #   as its very last step (the new session never touches the replaced pane)
@@ -110,48 +110,50 @@ else
   read -r target new_pane < <(tmux new-window -d -t "$tsess:" -n "$wname" -c "$cwd" -P -F '#{session_name}:#{window_index} #{pane_id}' "$cmd")
 fi
 
-# Replace mode, held at the trust dialog: close the replaced pane once the new session gets past
-# the dialog. Stop when either pane is gone (the user declined, or the pane was closed by hand) or
-# after SPAWN_TRUST_WAIT seconds. Runs detached, so it outlives the caller's tool call.
-watch_trust() { # watch_trust REPLACED_PANE NEW_PANE SECONDS
-  local waited=0 screen
-  while [[ $waited -lt $3 ]]; do
-    sleep 2
-    waited=$((waited + 2))
-    tmux display -p -t "$1" '#{pane_id}' >/dev/null 2>&1 || return 0
-    screen=$(tmux capture-pane -p -t "$2" 2>/dev/null) || return 0
-    if ! grep -qF 'trust this folder' <<<"$screen"; then
-      tmux kill-pane -t "$1"
+# Watch the pane until the session shows its kickoff prompt, which means it got past start-up.
+# On the way, answer the folder-trust dialog (default selection "No, exit") by moving to "Yes"
+# and confirming only once that option is shown as selected. Claude Code itself records the
+# trust, as when a user accepts by hand. Fail on an early exit, a dialog that stays, or a
+# session that never shows its prompt.
+pane_text() { tmux capture-pane -p -J -t "$new_pane" "$@" 2>/dev/null; } # visible screen; -S -N adds history
+accept_trust() { # move the selection to "Yes, I trust this folder", then confirm it
+  # The selection wraps, so send Down once and wait for the redraw; never press it again.
+  local _
+  tmux send-keys -t "$new_pane" Down
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    sleep 0.2
+    if pane_text | grep -E '❯ *Yes, I trust this folder' >/dev/null; then
+      tmux send-keys -t "$new_pane" Enter
       return 0
     fi
   done
+  return 1
 }
-detach() { # detach CMD...: run CMD in its own session with no terminal or inherited pipes
-  if command -v perl >/dev/null 2>&1; then
-    perl -e 'use POSIX qw(setsid); setsid(); exec @ARGV' -- "$@" </dev/null >/dev/null 2>&1 &
-  elif command -v setsid >/dev/null 2>&1; then
-    setsid "$@" </dev/null >/dev/null 2>&1 &
-  else
-    nohup "$@" </dev/null >/dev/null 2>&1 &
+started="❯ ${kickoff%% *}" deadline=$((SECONDS + ${SPAWN_SETTLE:-60})) accepted_at=""
+while :; do
+  sleep 0.5
+  s=$(pane_text -S -100) || { echo "$target: session exited right after launch" >&2; exit 1; }
+  if grep -qF "$started" <<<"$s"; then
+    sleep 1
+    tmux display -p -t "$new_pane" '#{pane_id}' >/dev/null 2>&1 || { echo "$target: session exited right after launch" >&2; exit 1; }
+    break
   fi
-}
-
-# Fail fast on the two start-up stops that ListAgents cannot show: a launcher that exits at
-# once (bad arguments), and the folder-trust dialog, which holds the session before it
-# registers. Nothing is typed into the pane; never answer the dialog from here.
-for _ in $(seq 1 "${SPAWN_SETTLE:-6}"); do
-  sleep 1
-  screen=$(tmux capture-pane -p -t "$new_pane" 2>/dev/null) || { echo "$target: session exited right after launch" >&2; exit 1; }
-  if grep -qF 'trust this folder' <<<"$screen"; then
-    echo "$target: '$cwd' is not a trusted folder; start in a trusted dir or have the user accept it in $target" >&2
-    if [[ $replace -eq 1 ]]; then
-      wait_s=${SPAWN_TRUST_WAIT:-1800}
-      detach bash -c "$(declare -f watch_trust); watch_trust \"\$@\"" watch_trust "$pane" "$new_pane" "$wait_s"
-      echo "a background watcher closes the replaced pane $pane once the dialog is accepted, and gives up after $wait_s seconds; do not run the close command" >&2
+  if pane_text | grep -F 'trust this folder' >/dev/null; then
+    if [[ ${SPAWN_TRUST_ACCEPT:-1} == 0 ]]; then
+      echo "$target: '$cwd' is not a trusted folder and SPAWN_TRUST_ACCEPT=0; have the user accept the dialog in $target" >&2
+      [[ $replace -eq 1 ]] && echo "the replaced pane $pane stays open; close it by hand once the new session runs; do not run a close command" >&2
+      exit 1
     fi
-    exit 1
+    if [[ -z $accepted_at ]]; then
+      accept_trust || { echo "$target: 'Yes, I trust this folder' was not selected 2 s after one Down in the trust dialog; nothing was confirmed" >&2; exit 1; }
+      accepted_at=$SECONDS
+    elif [[ $((SECONDS - accepted_at)) -ge 5 ]]; then
+      echo "$target: the folder-trust dialog is still shown 5 s after accepting it" >&2; exit 1
+    fi
   fi
+  [[ $SECONDS -lt $deadline ]] || { echo "$target: session did not show its prompt within ${SPAWN_SETTLE:-60} s; look at it with tmux capture-pane -p -t $new_pane" >&2; exit 1; }
 done
+[[ -n $accepted_at ]] && echo "accepted the folder-trust dialog for '$cwd' (SPAWN_TRUST_ACCEPT=0 turns this off)" >&2
 
 echo "target=$target pane=$new_pane session=${name:-} launcher=$launcher"
 if [[ $replace -eq 1 ]]; then echo "close: tmux kill-pane -t $pane"; fi
